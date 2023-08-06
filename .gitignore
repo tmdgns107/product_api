@@ -1,4 +1,5 @@
 node_modules
-dbConfig.json
+#dbConfig.json
 logs
 whatap.conf
+*.log
