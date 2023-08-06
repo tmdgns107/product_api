@@ -1,5 +1,6 @@
 var WhatapAgent = require('whatap').NodeAgent;
 const express = require('express');
+const moment = require('moment');
 const app = express();
 const port = 3000;
 const db = require('./dbConnect');
@@ -10,7 +11,7 @@ app.use(express.json())
 app.get('/products', async (req, res) => {
     try {
         const connection = await db;
-        const [results] = await connection.query('SELECT * FROM whatap_products');
+        const [results] = await connection.query('SELECT * FROM products');
 
         res.json({success: true, products: results});
     } catch (e) {
@@ -23,7 +24,7 @@ app.get('/products', async (req, res) => {
 app.get('/products/:id', async (req, res) => {
     try {
         const connection = await db;
-        const [results] = await connection.query('SELECT * FROM whatap_products WHERE id = ?', [req.params.id]);
+        const [results] = await connection.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
 
         res.json({success: true, product: results[0]});
     } catch (e) {
@@ -35,10 +36,11 @@ app.get('/products/:id', async (req, res) => {
 // POST: addProduct
 app.post('/products', async (req, res) => {
     try {
-        const date = new Date().toISOString();
+        const date = moment(new Date().toISOString()).format('YYYY-MM-DD HH:mm:ss');
+        // moment(isoDate).format('YYYY-MM-DD HH:mm:ss')
         let product = { name: req.body.name, price: Number(req.body.price), description: req.body.description, created_at: date, updated_at: date};
         const connection = await db;
-        const [results] = await connection.query('INSERT INTO whatap_products SET ?', product);
+        const [results] = await connection.query('INSERT INTO products SET ?', product);
 
         product.id = results.insertId;
 
@@ -57,8 +59,8 @@ app.put('/products/:id', async (req, res) => {
             res.json({success: false, message: 'Items to be updated have not been entered.'});
 
         const connection = await db;
-        const [existingProduct] = await connection.query('SELECT * FROM whatap_products WHERE id = ?', [req.params.id]);
-        const date = new Date().toISOString();
+        const [existingProduct] = await connection.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
+        const date = moment(new Date().toISOString()).format('YYYY-MM-DD HH:mm:ss');
 
         if (existingProduct.length > 0) {
             const { name, price, description } = req.body;
@@ -69,7 +71,7 @@ app.put('/products/:id', async (req, res) => {
                 updated_at: date
             };
 
-            await connection.query('UPDATE whatap_products SET ? WHERE id = ?', [product, req.params.id]);
+            await connection.query('UPDATE products SET ? WHERE id = ?', [product, req.params.id]);
 
             res.json({success: true, message: 'Product has been updated.', ...product });
         } else {
@@ -85,10 +87,10 @@ app.put('/products/:id', async (req, res) => {
 app.delete('/products/:id', async (req, res) => {
     try {
         const connection = await db;
-        const [results] = await connection.query('SELECT * FROM whatap_products WHERE id = ?', [req.params.id]);
+        const [results] = await connection.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
 
         if (results.length > 0) {
-            await connection.query('DELETE FROM whatap_products WHERE id = ?', [req.params.id]);
+            await connection.query('DELETE FROM products WHERE id = ?', [req.params.id]);
             res.json({success: true, message: 'Product has been deleted.' });
         } else {
             res.status(404).json({success: false, message: 'Product not found.' });
